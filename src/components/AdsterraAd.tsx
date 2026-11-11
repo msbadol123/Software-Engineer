@@ -13,8 +13,10 @@ export const AdsterraAd: React.FC<AdsterraAdProps> = ({
   className = '',
   showPreviewPlaceholder = false,
 }) => {
+  // Hook 1: useState
   const [adSetting, setAdSetting] = useState<AdSetting | null>(null);
 
+  // Hook 2: useEffect
   useEffect(() => {
     let mounted = true;
     DataService.getAdsSettings().then((settings) => {
@@ -27,7 +29,7 @@ export const AdsterraAd: React.FC<AdsterraAdProps> = ({
     };
   }, [slotKey]);
 
-  // Dimensions based on ad type
+  // Hook 3: useMemo for dimensions (unconditional)
   const dimensions = useMemo(() => {
     if (!adSetting) return { width: 728, height: 90, cssHeight: '90px', cssWidth: '728px' };
 
@@ -42,19 +44,18 @@ export const AdsterraAd: React.FC<AdsterraAdProps> = ({
     }
   }, [adSetting]);
 
-  if (!adSetting) return null;
-
-  // If disabled and not showing placeholder, render nothing
-  if (!adSetting.is_enabled && !showPreviewPlaceholder) {
-    return null;
-  }
-
-  const rawScript = adSetting.ad_script?.trim() || '';
-  const hasCustomCode = rawScript.length > 0 && !rawScript.startsWith('/*');
-  const hasZoneId = Boolean(adSetting.zone_id && adSetting.zone_id.trim() && !adSetting.zone_id.startsWith('demo_'));
-
-  // Prepare iframe HTML content for rendering ad script safely & reliably in React
+  // Hook 4: useMemo for iframe content (unconditional)
   const iframeSrcDoc = useMemo(() => {
+    if (!adSetting) return null;
+
+    const rawScript = adSetting.ad_script?.trim() || '';
+    const hasCustomCode = rawScript.length > 0 && !rawScript.startsWith('/*');
+    const hasZoneId = Boolean(
+      adSetting.zone_id &&
+        adSetting.zone_id.trim() &&
+        !adSetting.zone_id.startsWith('demo_')
+    );
+
     let adContent = '';
 
     if (hasCustomCode) {
@@ -103,7 +104,17 @@ export const AdsterraAd: React.FC<AdsterraAdProps> = ({
       </body>
       </html>
     `;
-  }, [hasCustomCode, hasZoneId, rawScript, adSetting.zone_id, dimensions]);
+  }, [adSetting, dimensions]);
+
+  // All hooks have completed unconditionally. Now perform early returns if necessary.
+  if (!adSetting) {
+    return null;
+  }
+
+  // If disabled and not showing preview placeholder, render nothing
+  if (!adSetting.is_enabled && !showPreviewPlaceholder) {
+    return null;
+  }
 
   return (
     <div
